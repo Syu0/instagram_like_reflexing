@@ -1,4 +1,5 @@
-import config
+import textwrap
+
 import telepot
 from Insta.Like_recents import *
 
@@ -8,19 +9,25 @@ class Telegram():
         print("텔레그램 구동합니다.")
         self.token = config.TELEGRAM_BOT_TOKKEN
         self.bot = telepot.Bot(self.token)
-        self.bot.message_loop(self.start_telegram)
+        self.bot.message_loop(self.message_agent)
         while 1:
             pass
 
-    def start_telegram(self, msg, info=None):
+    def message_agent(self, msg, info=None):
         tel_text = msg['text']
         chat_id = msg['chat']['id']
 
-        if tel_text == "반사":
-            self.bot.sendMessage(chat_id, "로그인... 잠시만 기다려주세요")
+        if tel_text == "노크":
+            self.bot.sendMessage(chat_id, "최근 피드들의 하트를 누릅니다. 약 20분 정도 소요되요.")
             LikeRecents()
-            self.bot.sendMessage(chat_id, "좋아요 반사 완료")
+            self.bot.sendMessage(chat_id, "하트 누르기 완료")
 
-        if tel_text == "시작":
-            # TODO: 잠자는 맥을 깨워 봇을 활성화 하자 \n 맥의 활성화 시간 12시 ~ 1시 (점심시간)
-            pass
+        if tel_text == "뭐하지":
+            manual = textwrap.dedent("""
+                    노크 : 최근 피드들의 하트를 누릅니다.(약 20분 소요).
+                    뭐하지 : 사용할 수 있는 단어들을 알려줍니다.
+                    """)
+            self.bot.sendMessage(chat_id, manual)
+
+        else:
+            self.bot.sendMessage(chat_id, "노크줘 / 뭐하지 라고 해주세요. 최근 피드들의 하트를 누릅니다.(약 20분 소요)")
