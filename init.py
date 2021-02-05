@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from Insta.Like_recents import LikeRecents
+from Insta.Like_reflexing import LikeReflexing
 from Like_recents.telegram import Telegram
 
 
@@ -8,6 +10,7 @@ class Main():
         print("시작합니다 \n")
         Telegram()
         # LikeRecents()
+        # LikeReflexing()
 
 
 if __name__ == "__main__":

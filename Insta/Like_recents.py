@@ -69,7 +69,11 @@ class LikeRecents():
     def move_to_home(self):
         xpath = '//*[@id="react-root"]/section/nav/div[2]/div/div/div[1]/a/div/div/img'
         search = self.browser.find_element_by_xpath(xpath)
-        search.click()
+        try:
+            search.click()
+        except ElementClickInterceptedException:
+            # clkick() 으로 누를 수 없는 버튼은 키보드 ENTER 를 이용한다.
+            search.send_keys(Keys.ENTER)
 
     def refresh_and_wait(self):
         time.sleep(random_wait_time())
@@ -96,6 +100,7 @@ class LikeRecents():
                 if total_target_count == 0:
                     print("No Empty hearts now.")
                     self.refresh_and_wait()
+                    return
 
                 for target_feed in empty_heart_buttons:
 

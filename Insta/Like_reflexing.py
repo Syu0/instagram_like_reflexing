@@ -1,8 +1,9 @@
+import re
 import time
 from random import randint
 
 from selenium import webdriver
-from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 import config
@@ -18,7 +19,7 @@ def random_wait_time():
 
     # TODO 공통 라이브러리로 작성  random_wait_time()
     wait_sec = randint(random_wait_min, random_wait_max)
-    print("sleep (%d)" % wait_sec)
+    # print("sleep (%d)" % wait_sec)
     return wait_sec
 
 
@@ -27,8 +28,8 @@ class LikeReflexing():
     def __init__(self):
         super().__init__()
         self.login()
-        self.check_accounts_activity()  # 활동 피드의 현황을 반환한다.
-        self.Like_reflexing()  # 좋아요 받은 만큼 반사한다.
+        new_activity = self.check_accounts_activity()  # 활동 피드의 현황을 반환한다.
+        self.Like_reflexing(new_activity)  # 좋아요 받은 만큼 반사한다.
 
     def login(self):
         # TODO 공통함수로 작성  login()
@@ -54,9 +55,11 @@ class LikeReflexing():
         time.sleep(5)
 
         # 정보저장팝업 닫기
-        popup = self.browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
-        popup.send_keys(Keys.ENTER)
-
+        try:
+            popup = self.browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
+            popup.send_keys(Keys.ENTER)
+        except:
+            pass
         time.sleep(2)
 
         # 알림 설정 팝업 닫기
@@ -71,11 +74,8 @@ class LikeReflexing():
         # * 활동 피드의 현황을 반환한다.
         # * 예) (하루동안) 신규 활동 총 10개 / 신규 팔로워 10 명 / 좋아요 활동 10개 / 댓글 10개
         # TODO: 새로운 팔로워의 기준이 필요함.
-        # 활동 피드 클릭 또는 숨겨진 영역 보이게 하기
-        # 활동 피드 버튼 //*[@id="react-root"]/section/nav/div[2]/div/div/div[3]/div/div[4]/a
-        # 활동 피드 URL https://www.instagram.com/accounts/activity/
+        new_active_list = {}    # 하룻동안의 좋아요/댓글 활동
 
-        #
         self.browser.get("https://www.instagram.com/accounts/activity/")
         time.sleep(4)
         xpath_active_feed_list = '//div/div[@class="YFq-A"]'
@@ -84,18 +84,25 @@ class LikeReflexing():
         count_feed_total = len(active_feed_list)
         if not count_feed_total:
             print("no activity in feed.")
-            return
+            return new_active_list
 
         count_liked = 0  # 신규 좋아요/댓글 누른 수
         count_followed = 0  # 신규 팔로워 수
         xpath_new_follower = '//div[@class="PUHRj  H_sJK"]/div[3]/button'  # '팔로우' 버튼
         xpath_new_liked = '//div[@class="PUHRj  H_sJK"]/div[2]/a'  # '이미지' 링크
-        new_active_list = {}
 
         try:
             # '이미지'링크가 존재하면
             actors = self.browser.find_elements_by_xpath(xpath_new_liked)
             for act in actors:
+
+                # 하루가 지난 활동은 건너뛴다.
+                today = act.find_element_by_xpath('../ time')
+                input_day = re.compile('[0-9]+일')
+                if input_day.match(today.text):
+                    print("end of today")
+                    return new_active_list
+
                 # 좋아요 카운트 +1
                 count_liked += 1
                 # 링크 & 계정명 수집
@@ -121,10 +128,69 @@ class LikeReflexing():
 
         # 팔로잉, 좋아요 횟수 반환
         print("게시물 좋아요 및 덧글 : ", count_liked, " , 신규 팔로워 ", count_followed)
-        print(new_active_list)
-        new_active_list = new_active_list
-        self.browser.close()
-        pass
+        return new_active_list
 
-    def Like_reflexing(self):
-        pass
+    def Like_reflexing(self, new_activity):
+        # new_activity :
+        # {'start_coding_proj': {'count': 2, 'link': 'https://www.instagram.com/start_coding_proj/'}}
+        print(new_activity)
+
+        # 사전에서 하나씩 꺼낸다.
+        for userName in new_activity.keys():
+            print('Go to ', userName, '\'s page.', new_activity[userName]['link'])
+            print('I got ',new_activity[userName]['count'], ' liked.')
+
+            if new_activity[userName]['count'] == 0:
+                break
+
+            # 프로필 페이지로 이동한다.
+            self.browser.get(new_activity[userName]['link'])
+
+            time.sleep(3)
+            firstItem = self.browser.find_element_by_xpath(
+                '//article/div/div/div[1]/div[1]/a')
+            time.sleep(3)
+            # TODO : 버튼 클릭 공통함수 추가
+            # 첫 게시물 클릭
+            try:
+                firstItem.click()
+            except ElementClickInterceptedException:
+                firstItem.send_keys(Keys.ENTER)
+            finally:
+                time.sleep(random_wait_time())
+
+            # 좋아요 안눌렸으면 클릭
+            for i in range(1, 10):
+                print (new_activity[userName]['count'])
+                if new_activity[userName]['count'] == 0:
+                    break
+                try:
+                    xpath_like_button_svg = '//article//*[@aria-label="좋아요"]/../../../../button[@class="wpO6b "]'
+                    empty_heart_button = self.browser.find_element_by_xpath(xpath_like_button_svg)
+
+                    try:
+                        print("clicked")
+                        empty_heart_button.click()
+                    except ElementClickInterceptedException:
+                        empty_heart_button.send_keys(Keys.ENTER)
+                    finally:
+                        new_activity[userName]['count'] -= 1
+                        time.sleep(3)
+
+                except NoSuchElementException:
+                    # print("No Element!")
+                    pass
+                finally:
+                    # 다음피드로 이동
+                    self.nextFeed()
+
+    def nextFeed(self):
+        # print("next feed")
+        try:
+            nextFeed = self.browser.find_element_by_css_selector(
+                'body > div._2dDPU.CkGkG > div.EfHg9 > div > div > a._65Bje.coreSpriteRightPaginationArrow')
+            nextFeed.click()
+            time.sleep(4)
+        except NoSuchElementException:
+            print("End of feed")
+            pass

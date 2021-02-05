@@ -33,7 +33,7 @@ class Telegram():
             self.bot.sendMessage(chat_id, manual)
 
         if tel_text == "반사":
-            self.bot.sendMessage(chat_id, "나의 팔로워들의 신규 게시물에 하트를 눌러줍니다.")
+            self.bot.sendMessage(chat_id, "좋아요 눌러준 계정에 받은만큼 하트를 눌러줍니다.")
             LikeReflexing()
             self.bot.sendMessage(chat_id, "하트 누르기 완료")
 
