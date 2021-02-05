@@ -1,7 +1,10 @@
 import textwrap
 
 import telepot
-from Insta.Like_recents import *
+
+import config
+from Insta.Like_recents import LikeRecents
+from Insta.Like_reflexing import LikeReflexing
 
 
 class Telegram():
@@ -29,5 +32,10 @@ class Telegram():
                     """)
             self.bot.sendMessage(chat_id, manual)
 
+        if tel_text == "반사":
+            self.bot.sendMessage(chat_id, "나의 팔로워들의 신규 게시물에 하트를 눌러줍니다.")
+            LikeReflexing()
+            self.bot.sendMessage(chat_id, "하트 누르기 완료")
+
         else:
-            self.bot.sendMessage(chat_id, "노크줘 / 뭐하지 라고 해주세요. 최근 피드들의 하트를 누릅니다.(약 20분 소요)")
+            self.bot.sendMessage(chat_id, "노크 / 반사 / 뭐하지 라고 해주세요. 최근 피드들의 하트를 누릅니다.(약 20분 소요)")

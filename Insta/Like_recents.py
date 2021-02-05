@@ -10,29 +10,25 @@ PW = config.USER_PW  # 인스타그램 PW
 
 from random import randint
 
-random_wait_min = 3  # 최소 대기시간
-random_wait_max = 8  # 최대 대기시간
-
-click_like_button_max_count = 3  # 좋아요 반사 시도 횟수
-
 
 # 랜덤 대기시간
 def random_wait_time():
+    random_wait_min = 3  # 최소 대기시간
+    random_wait_max = 8  # 최대 대기시간
+
     wait_sec = randint(random_wait_min, random_wait_max)
     print("sleep (%d)" % wait_sec)
     return wait_sec
 
 
+CLICK_LIKE_BUTTON_TRY_COUNT = 50    # 좋아요 반사 시도 횟수
 class LikeRecents():
 
     def __init__(self):
         super().__init__()
         self.login()
         self.move_to_home()  # 홈화면으로 이동
-        self.click_like_button(click_like_button_max_count)
-
-        # self.search_tags()
-        # Telegram()
+        self.click_like_button(CLICK_LIKE_BUTTON_TRY_COUNT)
 
     def login(self):
         # 화면띄우기
@@ -68,7 +64,7 @@ class LikeRecents():
             popup.send_keys(Keys.ENTER)
         except:
             pass
-        time.sleep(5)
+        time.sleep(random_wait_time())
 
     def move_to_home(self):
         xpath = '//*[@id="react-root"]/section/nav/div[2]/div/div/div[1]/a/div/div/img'
@@ -82,12 +78,11 @@ class LikeRecents():
 
     # 좋아요 누르기
     def click_like_button(self, max_try):
-
         time.sleep(3)
         pass_this_article = False
 
         for article_number in range(1, max_try):
-            time.sleep(random_wait_time())
+            time.sleep(4)
 
             try:
 
@@ -109,6 +104,7 @@ class LikeRecents():
                         target_feed.click()
                         print("clicked")
                     except ElementClickInterceptedException:
+                        # clkick() 으로 누를 수 없는 버튼은 키보드 ENTER 를 이용한다.
                         target_feed.send_keys(Keys.ENTER)
                         print("pressed ENTER")
                     finally:
@@ -117,5 +113,4 @@ class LikeRecents():
                 self.refresh_and_wait()
 
         print("좋아요 %d번 시도 종료" % max_try)
-
-
+        self.browser.quit()
