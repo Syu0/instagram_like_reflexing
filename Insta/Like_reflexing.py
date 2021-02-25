@@ -74,7 +74,7 @@ class LikeReflexing():
         # * 활동 피드의 현황을 반환한다.
         # * 예) (하루동안) 신규 활동 총 10개 / 신규 팔로워 10 명 / 좋아요 활동 10개 / 댓글 10개
         # TODO: 새로운 팔로워의 기준이 필요함.
-        new_active_list = {}    # 하룻동안의 좋아요/댓글 활동
+        new_active_list = {}  # 하룻동안의 좋아요/댓글 활동
 
         self.browser.get("https://www.instagram.com/accounts/activity/")
         time.sleep(4)
@@ -86,59 +86,55 @@ class LikeReflexing():
             print("no activity in feed.")
             return new_active_list
 
-        count_liked = 0  # 신규 좋아요/댓글 누른 수
+        total_acting = 0  # 총 활동 수
         count_followed = 0  # 신규 팔로워 수
-        xpath_new_follower = '//div[@class="PUHRj  H_sJK"]/div[3]/button'  # '팔로우' 버튼
-        xpath_new_liked = '//div[@class="PUHRj  H_sJK"]/div[2]/a'  # '이미지' 링크
+        xpath_new_actings = '//div[@class="YFq-A"]/span'  # 새로운 활동
 
         try:
             # '이미지'링크가 존재하면
-            actors = self.browser.find_elements_by_xpath(xpath_new_liked)
-            for act in actors:
+            actings = self.browser.find_elements_by_xpath(xpath_new_actings)
 
-                # 하루가 지난 활동은 건너뛴다.
-                today = act.find_element_by_xpath('../ time')
-                input_day = re.compile('[0-9]+일')
-                if input_day.match(today.text):
-                    print("end of today")
-                    return new_active_list
+            for actNum in range(1, len(actings)):
+                print("start number : ", actNum)
 
-                # 좋아요 카운트 +1
-                count_liked += 1
-                # 링크 & 계정명 수집
-                userName = act.get_attribute('title')
-                print("follower liked   ", userName)
+                userNameElem = actings[actNum].find_elements_by_xpath("./a")
+                userName = userNameElem[0].text
 
-                if userName in new_active_list:
-                    new_active_list[userName]['count'] = new_active_list[userName]['count'] + 1
-                else:
-                    new_active_list[userName] = {'count': 1, 'link': act.get_attribute('href')}
+                userActDescElem = actings[actNum].find_elements_by_xpath("./span")
+                # <span>님이 회원님의 게시물을 좋아합니다.</span>
+                print(userName, '', userActDescElem[0].text)
+
+                # 활동유저 카운트 +1
+                total_acting += 1
+
+                if userName not in new_active_list:
+                    like_count = 3  # 기본으로 좋아요 버튼은 like_count 맡큼 누른다.
+
+                    # 신규 팔로워 구분
+                    actDescText = re.compile('.*팔로우')
+                    # <span>님이 회원님을 팔로우하기 시작했습니다.</span>
+                    if actDescText.match(userActDescElem[0].text):
+                        print("ㄴ 신규팔로워")
+                        like_count = 5
+                        count_followed += 1
+
+                    new_active_list[userName] = {'count': like_count,
+                                                 'link': 'https://www.instagram.com/' + userName + '/'}
+
         except:
             print("신규 활동 없음")
 
-        try:
-            # '팔로우' 버튼이 존재하면
-            actors = self.browser.find_elements_by_xpath(xpath_new_follower)
-            for act in actors:
-                # 팔로워 카운트 +1
-                count_followed += 1
-                # 링크 & 계정명 수집
-        except:
-            print("신규 팔로워 없음")
-
-        # 팔로잉, 좋아요 횟수 반환
-        print("게시물 좋아요 및 덧글 : ", count_liked, " , 신규 팔로워 ", count_followed)
+        print("총 활동 : ", total_acting, " , 신규 팔로워 ", count_followed)
         return new_active_list
 
     def Like_reflexing(self, new_activity):
         # new_activity :
         # {'start_coding_proj': {'count': 2, 'link': 'https://www.instagram.com/start_coding_proj/'}}
-        print(new_activity)
 
+        # print(new_activity)
         # 사전에서 하나씩 꺼낸다.
         for userName in new_activity.keys():
-            print('Go to ', userName, '\'s page.', new_activity[userName]['link'])
-            print('I got ',new_activity[userName]['count'], ' liked.')
+            print('Go to ', userName, '\'s page.', 'I got ', new_activity[userName]['count'], ' liked.')
 
             if new_activity[userName]['count'] == 0:
                 break
@@ -160,8 +156,8 @@ class LikeReflexing():
                 time.sleep(random_wait_time())
 
             # 좋아요 안눌렸으면 클릭
-            for i in range(1, 10):
-                print (new_activity[userName]['count'])
+            for i in range(1, 20):
+
                 if new_activity[userName]['count'] == 0:
                     break
                 try:
