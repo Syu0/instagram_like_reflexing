@@ -92,7 +92,6 @@ class LikeReflexing():
         xpath_new_actings = '//div[@class="YFq-A"]/span'  # 새로운 활동
 
         try:
-            # '이미지'링크가 존재하면
             actings = self.browser.find_elements_by_xpath(xpath_new_actings)
 
             for actNum in range(1, len(actings)):
@@ -103,7 +102,7 @@ class LikeReflexing():
                 # <span>님이 회원님의 게시물을 좋아합니다.</span>
                 # <span>님이 회원님을 팔로우하기 시작했습니다.</span>
                 # <span>님이 댓글을 남겼습니다</span>
-                print(userName, '', userActDescElem[0].text)
+                # print(userName, '', userActDescElem[0].text)
 
                 # 활동유저 카운트 +1
                 total_acting += 1
@@ -115,25 +114,23 @@ class LikeReflexing():
                     newFollowerPattern = re.compile(r'.*팔로우')
                     # <span>님이 회원님을 팔로우하기 시작했습니다.</span>
                     if newFollowerPattern.match(userActDescElem[0].text):
-                        print("ㄴ 신규팔로워")
+                        # print("ㄴ 신규팔로워")
                         like_count = 5
                         count_followed += 1
-                        self.newFollower += "@"+ userName + ' ,'
+                        self.newFollower += " , @"+ userName
 
                     # 신규 댓글 대응
-                    newCommentPattern = re.compile(r'.*님이 댓글을 남겼습니다:')
+                    newCommentPattern = re.compile(r'.*댓글')
                     if newCommentPattern.match(userActDescElem[0].text):
-                        msgStartPos = newCommentPattern.search(userActDescElem[0].text).end()
-                        commentStr = userActDescElem[0].text[msgStartPos:]
-                        print('@'+userName + ':' + commentStr, 'https://www.instagram.com/' + userName + '/')
-                        self.newComments += ' @'+userName + ':' + commentStr, 'https://www.instagram.com/' + userName + '/   '
+                        self.newComments += " , @"+ userName
                     new_active_list[userName] = {'count': like_count,
                                                  'link': 'https://www.instagram.com/' + userName + '/'}
 
-            self.newFollower += ' 총 ' + count_followed + '명'
+            print(self.newFollower)
+            print(self.newComments)
 
         except:
-            print("신규 활동 없음")
+            print("파싱 오류 발")
 
 
 
