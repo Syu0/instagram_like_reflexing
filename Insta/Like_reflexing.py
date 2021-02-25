@@ -24,7 +24,8 @@ def random_wait_time():
 
 
 class LikeReflexing():
-
+    newFollower = "신규 팔로워 :"
+    newComments = "최근 댓글 : "
     def __init__(self):
         super().__init__()
         self.login()
@@ -95,13 +96,13 @@ class LikeReflexing():
             actings = self.browser.find_elements_by_xpath(xpath_new_actings)
 
             for actNum in range(1, len(actings)):
-                print("start number : ", actNum)
-
                 userNameElem = actings[actNum].find_elements_by_xpath("./a")
                 userName = userNameElem[0].text
 
                 userActDescElem = actings[actNum].find_elements_by_xpath("./span")
                 # <span>님이 회원님의 게시물을 좋아합니다.</span>
+                # <span>님이 회원님을 팔로우하기 시작했습니다.</span>
+                # <span>님이 댓글을 남겼습니다</span>
                 print(userName, '', userActDescElem[0].text)
 
                 # 활동유저 카운트 +1
@@ -111,27 +112,36 @@ class LikeReflexing():
                     like_count = 3  # 기본으로 좋아요 버튼은 like_count 맡큼 누른다.
 
                     # 신규 팔로워 구분
-                    actDescText = re.compile('.*팔로우')
+                    newFollowerPattern = re.compile(r'.*팔로우')
                     # <span>님이 회원님을 팔로우하기 시작했습니다.</span>
-                    if actDescText.match(userActDescElem[0].text):
+                    if newFollowerPattern.match(userActDescElem[0].text):
                         print("ㄴ 신규팔로워")
                         like_count = 5
                         count_followed += 1
+                        self.newFollower += "@"+ userName + ' ,'
 
+                    # 신규 댓글 대응
+                    newCommentPattern = re.compile(r'.*님이 댓글을 남겼습니다:')
+                    if newCommentPattern.match(userActDescElem[0].text):
+                        msgStartPos = newCommentPattern.search(userActDescElem[0].text).end()
+                        commentStr = userActDescElem[0].text[msgStartPos:]
+                        print('@'+userName + ':' + commentStr, 'https://www.instagram.com/' + userName + '/')
+                        self.newComments += ' @'+userName + ':' + commentStr, 'https://www.instagram.com/' + userName + '/   '
                     new_active_list[userName] = {'count': like_count,
                                                  'link': 'https://www.instagram.com/' + userName + '/'}
+
+            self.newFollower += ' 총 ' + count_followed + '명'
 
         except:
             print("신규 활동 없음")
 
-        print("총 활동 : ", total_acting, " , 신규 팔로워 ", count_followed)
+
+
+
         return new_active_list
 
     def Like_reflexing(self, new_activity):
-        # new_activity :
-        # {'start_coding_proj': {'count': 2, 'link': 'https://www.instagram.com/start_coding_proj/'}}
 
-        # print(new_activity)
         # 사전에서 하나씩 꺼낸다.
         for userName in new_activity.keys():
             print('Go to ', userName, '\'s page.', 'I got ', new_activity[userName]['count'], ' liked.')
