@@ -77,7 +77,7 @@ class LikeReflexing():
         # TODO: 새로운 팔로워의 기준이 필요함.
         new_active_list = {}  # 하룻동안의 좋아요/댓글 활동
 
-        self.browser.get("https://www.instagram.com/accounts/activity/")
+        self.browser.find_elements_by_xpath('//a[@class="_0ZPOP kIKUG "]')[0].send_keys(Keys.ENTER)
         time.sleep(4)
         xpath_active_feed_list = '//div/div[@class="YFq-A"]'
         active_feed_list = self.browser.find_elements_by_xpath(xpath_active_feed_list)
@@ -93,7 +93,7 @@ class LikeReflexing():
 
         try:
             actings = self.browser.find_elements_by_xpath(xpath_new_actings)
-
+            print( "total node counts : ", len(actings))
             for actNum in range(1, len(actings)):
                 userNameElem = actings[actNum].find_elements_by_xpath("./a")
                 userName = userNameElem[0].text
@@ -130,15 +130,12 @@ class LikeReflexing():
             print(self.newComments)
 
         except:
-            print("파싱 오류 발")
-
-
-
+            print("중간에 작업 멈춤.")
 
         return new_active_list
 
     def Like_reflexing(self, new_activity):
-
+        isSecretAccount = False
         # 사전에서 하나씩 꺼낸다.
         for userName in new_activity.keys():
             print('Go to ', userName, '\'s page.', 'I got ', new_activity[userName]['count'], ' liked.')
@@ -149,43 +146,56 @@ class LikeReflexing():
             # 프로필 페이지로 이동한다.
             self.browser.get(new_activity[userName]['link'])
 
-            time.sleep(3)
-            firstItem = self.browser.find_element_by_xpath(
-                '//article/div/div/div[1]/div[1]/a')
-            time.sleep(3)
             # TODO : 버튼 클릭 공통함수 추가
             # 첫 게시물 클릭
             try:
+                time.sleep(3)
+                firstItem = self.browser.find_element_by_xpath(
+                    '//article/div/div/div[1]/div[1]/a')
+                time.sleep(3)
                 firstItem.click()
+                isSecretAccount = False
             except ElementClickInterceptedException:
                 firstItem.send_keys(Keys.ENTER)
+            except NoSuchElementException:
+                isSecretAccount = True
+                print("no article in ", userName)
             finally:
                 time.sleep(random_wait_time())
 
-            # 좋아요 안눌렸으면 클릭
-            for i in range(1, 20):
+            if not isSecretAccount :
+                # 좋아요 안눌렸으면 클릭
+                for i in range(1, 20):
 
-                if new_activity[userName]['count'] == 0:
-                    break
-                try:
-                    xpath_like_button_svg = '//article//*[@aria-label="좋아요"]/../../../../button[@class="wpO6b "]'
-                    empty_heart_button = self.browser.find_element_by_xpath(xpath_like_button_svg)
-
+                    if new_activity[userName]['count'] == 0:
+                        break
                     try:
-                        print("clicked")
-                        empty_heart_button.click()
-                    except ElementClickInterceptedException:
-                        empty_heart_button.send_keys(Keys.ENTER)
-                    finally:
-                        new_activity[userName]['count'] -= 1
-                        time.sleep(3)
+                        # NAME = '좋아요'
+                        svg_buttons = self.browser.find_elements_by_tag_name('svg')
+                        hlabel = svg_buttons[10].get_attribute('aria-label')
 
-                except NoSuchElementException:
-                    # print("No Element!")
-                    pass
-                finally:
-                    # 다음피드로 이동
-                    self.nextFeed()
+                        if hlabel == '좋아요':
+                            heart_button = svg_buttons[10]
+                            print("빈 하트")
+                        else:
+                            heart_button = None
+                            print("이미 클릭됨")
+                        if heart_button:
+                            try:
+                                print("clicked")
+                                heart_button.click()
+                            except ElementClickInterceptedException:
+                                heart_button.send_keys(Keys.ENTER)
+                            finally:
+                                new_activity[userName]['count'] -= 1
+                                time.sleep(3)
+
+                    except NoSuchElementException:
+                        print("No Element!")
+                        pass
+                    finally:
+                        # 다음피드로 이동
+                        self.nextFeed()
 
     def nextFeed(self):
         # print("next feed")
