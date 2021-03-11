@@ -12,6 +12,7 @@ from random import randint
 
 
 # 랜덤 대기시간
+# TODO 공통함수로 빼기 random_wait_time()
 def random_wait_time():
     random_wait_min = 3  # 최소 대기시간
     random_wait_max = 8  # 최대 대기시간
@@ -21,7 +22,7 @@ def random_wait_time():
     return wait_sec
 
 
-CLICK_LIKE_BUTTON_TRY_COUNT = 50    # 좋아요 반사 시도 횟수
+CLICK_LIKE_BUTTON_TRY_COUNT = 100    # 좋아요 반사 시도 횟수
 class LikeRecents():
 
     def __init__(self):
@@ -53,9 +54,11 @@ class LikeRecents():
         time.sleep(5)
 
         # 정보저장팝업 닫기
-        popup = self.browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
-        popup.send_keys(Keys.ENTER)
-
+        try:
+            popup = self.browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
+            popup.send_keys(Keys.ENTER)
+        except:
+            pass
         time.sleep(2)
 
         # 알림 설정 팝업 닫기
@@ -74,6 +77,8 @@ class LikeRecents():
         except ElementClickInterceptedException:
             # clkick() 으로 누를 수 없는 버튼은 키보드 ENTER 를 이용한다.
             search.send_keys(Keys.ENTER)
+        finally:
+            pass
 
     def refresh_and_wait(self):
         time.sleep(random_wait_time())
