@@ -77,8 +77,15 @@ class LikeReflexing():
         # TODO: 새로운 팔로워의 기준이 필요함.
         new_active_list = {}  # 하룻동안의 좋아요/댓글 활동
 
-        self.browser.find_elements_by_xpath('//a[@class="_0ZPOP kIKUG "]')[0].send_keys(Keys.ENTER)
+        try:
+            activity_btn = self.browser.find_element_by_xpath('//a[@class="_0ZPOP kIKUG "]')
+        except NoSuchElementException:
+            activity_btn = self.browser.find_element_by_xpath('//a[@class="_0ZPOP kIKUG H9zXO"]')
+
+        time.sleep(2)
+        activity_btn.click()
         time.sleep(4)
+
         xpath_active_feed_list = '//div/div[@class="YFq-A"]'
         active_feed_list = self.browser.find_elements_by_xpath(xpath_active_feed_list)
 
