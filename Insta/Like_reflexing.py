@@ -5,6 +5,7 @@ from random import randint
 from selenium import webdriver
 from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
 
 import config
 
@@ -177,20 +178,26 @@ class LikeReflexing():
                     if new_activity[userName]['count'] == 0:
                         break
                     try:
-                        # NAME = '좋아요'
-                        svg_buttons = self.browser.find_elements_by_tag_name('svg')
-                        hlabel = svg_buttons[10].get_attribute('aria-label')
+                        # Check label '좋아요'
+                        buttons = self.browser.find_elements_by_xpath('//span/button[@class="wpO6b  "]')
 
-                        if hlabel == '좋아요':
-                            heart_button = svg_buttons[10]
-                            print("빈 하트")
-                        else:
-                            heart_button = None
-                            print("이미 클릭됨")
+                        for btn in buttons:
+                            svgs = btn.find_elements(By.XPATH, 'svg')
+                            for svg in svgs:
+                                print(svg.get_attribute('aria-label'))
+
+                        print(2)
+                        # if hlabel.get_attribute('aria-label') == '좋아요':
+                        #     print("==> ", hlabel.get_attribute('aria-label') ,"빈 하트")
+                        # else:
+                        #     print("==> ", hlabel.get_attribute('aria-label') ,"이미 클릭됨")
+
+                        # Heart button click
+                        heart_button = self.browser.find_element_by_xpath('//span[@class="fr66n"]/button[@class="wpO6b  "]')
                         if heart_button:
                             try:
-                                print("clicked")
                                 heart_button.click()
+                                print("clicked")
                             except ElementClickInterceptedException:
                                 heart_button.send_keys(Keys.ENTER)
                             finally:
