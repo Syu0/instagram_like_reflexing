@@ -121,22 +121,22 @@ class LikeReflexing:
                         break
                     try:
                         # Check label '좋아요'
-                        buttons = self.browser.find_elements_by_xpath('//span/button[@class="wpO6b  "]')
-
-                        for btn in buttons:
-                            svgs = btn.find_elements(By.XPATH, 'svg')
-                            for svg in svgs:
-                                print(svg.get_attribute('aria-label'))
-
-                        # Heart button click
-                        heart_button = self.browser.find_element_by_xpath(
-                            '//span[@class="fr66n"]/button[@class="wpO6b  "]')
-                        if heart_button:
-                            try:
-                                click_element(heart_button)
-                            finally:
-                                new_activity[userName]['count'] -= 1
-
+                        span_button = self.browser.find_element_by_class_name('fr66n')
+                        span_ele = span_button.find_element(By.XPATH, './/button/div/span')
+                        svg = span_ele.find_element(By.XPATH, './/*[name()="svg"]')
+                        # span_button.find_element_by_xpath('//div[@class="_8-yf5 "]/*[name()="svg"][@aria-label="좋아"]')
+                        print(svg.get_attribute('aria-label'))
+                        if svg.get_attribute('aria-label') == '좋아요':
+                            # Heart button click
+                            heart_button = self.browser.find_element_by_xpath(
+                                '//span[@class="fr66n"]/button[@class="wpO6b  "]')
+                            if heart_button:
+                                try:
+                                    click_element(heart_button)
+                                finally:
+                                    new_activity[userName]['count'] -= 1
+                        else:
+                            print('이미 눌렀음')
                     except NoSuchElementException:
                         print("No Element!")
                         pass
