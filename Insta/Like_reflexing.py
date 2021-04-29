@@ -1,76 +1,22 @@
 import re
 import time
-from random import randint
 
-from selenium import webdriver
 from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
-import config
-
-ID = config.USER_ID  # 인스타그램 ID realcoders
-PW = config.USER_PW  # 인스타그램 PW
+from Insta.common.Utils import random_wait_time, login, click_by_xpath, click_element, click_by_css_selector
 
 
-# 랜덤 대기시간
-def random_wait_time():
-    random_wait_min = 3  # 최소 대기시간
-    random_wait_max = 8  # 최대 대기시간
-
-    # TODO 공통 라이브러리로 작성  random_wait_time()
-    wait_sec = randint(random_wait_min, random_wait_max)
-    # print("sleep (%d)" % wait_sec)
-    return wait_sec
-
-
-class LikeReflexing():
-    newFollower = "신규 팔로워 :"
+class LikeReflexing:
+    newFollower = "신규 팔로워 : "
     newComments = "최근 댓글 : "
+    newLikeAction = "최근 좋아요 : "
+
     def __init__(self):
         super().__init__()
-        self.login()
+        login(self)
         new_activity = self.check_accounts_activity()  # 활동 피드의 현황을 반환한다.
         self.Like_reflexing(new_activity)  # 좋아요 받은 만큼 반사한다.
-
-    def login(self):
-        # TODO 공통함수로 작성  login()
-        # 화면띄우기
-        options = webdriver.ChromeOptions()
-        options.add_argument("disable-infobars")
-        options.add_argument("enable-automation")
-        self.browser = webdriver.Chrome(config.PATH_TO_WEBDRIVER, chrome_options=options)
-        self.browser.get("https://instagram.com")
-
-        # 로딩기다리기
-        time.sleep(4)
-
-        # Login ID 속성값 찾고 입력하기
-        login_id = self.browser.find_element_by_name('username')
-        login_id.send_keys(ID)
-
-        # Login PW 속성값 찾기 입력하기
-        login_pw = self.browser.find_element_by_name('password')
-        login_pw.send_keys(PW)
-        login_pw.send_keys(Keys.RETURN)
-
-        time.sleep(5)
-
-        # 정보저장팝업 닫기
-        try:
-            popup = self.browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
-            popup.send_keys(Keys.ENTER)
-        except:
-            pass
-        time.sleep(2)
-
-        # 알림 설정 팝업 닫기
-        try:
-            popup = self.browser.find_element_by_xpath('/html/body/div[4]/div/div/div/div[3]/button[2]')
-            popup.send_keys(Keys.ENTER)
-        except:
-            pass
-        time.sleep(random_wait_time())
 
     def check_accounts_activity(self):
         # * 활동 피드의 현황을 반환한다.
@@ -84,7 +30,7 @@ class LikeReflexing():
             activity_btn = self.browser.find_element_by_xpath('//a[@class="_0ZPOP kIKUG H9zXO"]')
 
         time.sleep(2)
-        activity_btn.click()
+        click_element(activity_btn)
         time.sleep(4)
 
         xpath_active_feed_list = '//div/div[@class="YFq-A"]'
@@ -101,8 +47,9 @@ class LikeReflexing():
 
         try:
             actings = self.browser.find_elements_by_xpath(xpath_new_actings)
-            print( "total node counts : ", len(actings))
+            print("total node counts : ", len(actings))
             for actNum in range(1, len(actings)):
+                print(actings[actNum].text)
                 userNameElem = actings[actNum].find_elements_by_xpath("./a")
                 userName = userNameElem[0].text
 
@@ -125,17 +72,23 @@ class LikeReflexing():
                         # print("ㄴ 신규팔로워")
                         like_count = 5
                         count_followed += 1
-                        self.newFollower += " , @"+ userName
+                        self.newFollower += " , @" + userName
 
                     # 신규 댓글 대응
                     newCommentPattern = re.compile(r'.*댓글')
                     if newCommentPattern.match(userActDescElem[0].text):
-                        self.newComments += " , @"+ userName
+                        self.newComments += " , ", actings[actNum].text
+
+                    # 신규 좋아요 구분
+                    newLikePattern = re.compile(r'.*좋아')
+                    if newLikePattern.match(userActDescElem[0].text):
+                        self.newLikeAction += " , @" + userName
+
                     new_active_list[userName] = {'count': like_count,
                                                  'link': 'https://www.instagram.com/' + userName + '/'}
-
             print(self.newFollower)
             print(self.newComments)
+            print(self.newLikeAction)
 
         except:
             print("중간에 작업 멈춤.")
@@ -154,24 +107,13 @@ class LikeReflexing():
             # 프로필 페이지로 이동한다.
             self.browser.get(new_activity[userName]['link'])
 
-            # TODO : 버튼 클릭 공통함수 추가
-            # 첫 게시물 클릭
             try:
-                time.sleep(3)
-                firstItem = self.browser.find_element_by_xpath(
-                    '//article/div/div/div[1]/div[1]/a')
-                time.sleep(3)
-                firstItem.click()
-                isSecretAccount = False
-            except ElementClickInterceptedException:
-                firstItem.send_keys(Keys.ENTER)
+                click_by_xpath(self, '//article/div/div/div[1]/div[1]/a')
             except NoSuchElementException:
+                print("첫번째 피드 클릭 실패 : 비공개 계정인지 확인 ", new_activity[userName]['link'])
                 isSecretAccount = True
-                print("no article in ", userName)
-            finally:
-                time.sleep(random_wait_time())
 
-            if not isSecretAccount :
+            if not isSecretAccount:
                 # 좋아요 안눌렸으면 클릭
                 for i in range(1, 20):
 
@@ -186,23 +128,14 @@ class LikeReflexing():
                             for svg in svgs:
                                 print(svg.get_attribute('aria-label'))
 
-                        print(2)
-                        # if hlabel.get_attribute('aria-label') == '좋아요':
-                        #     print("==> ", hlabel.get_attribute('aria-label') ,"빈 하트")
-                        # else:
-                        #     print("==> ", hlabel.get_attribute('aria-label') ,"이미 클릭됨")
-
                         # Heart button click
-                        heart_button = self.browser.find_element_by_xpath('//span[@class="fr66n"]/button[@class="wpO6b  "]')
+                        heart_button = self.browser.find_element_by_xpath(
+                            '//span[@class="fr66n"]/button[@class="wpO6b  "]')
                         if heart_button:
                             try:
-                                heart_button.click()
-                                print("clicked")
-                            except ElementClickInterceptedException:
-                                heart_button.send_keys(Keys.ENTER)
+                                click_element(heart_button)
                             finally:
                                 new_activity[userName]['count'] -= 1
-                                time.sleep(3)
 
                     except NoSuchElementException:
                         print("No Element!")
@@ -212,12 +145,5 @@ class LikeReflexing():
                         self.nextFeed()
 
     def nextFeed(self):
-        # print("next feed")
-        try:
-            nextFeed = self.browser.find_element_by_css_selector(
-                'body > div._2dDPU.CkGkG > div.EfHg9 > div > div > a._65Bje.coreSpriteRightPaginationArrow')
-            nextFeed.click()
-            time.sleep(4)
-        except NoSuchElementException:
-            print("End of feed")
-            pass
+        next_feed_selector = 'body > div._2dDPU.CkGkG > div.EfHg9 > div > div > a._65Bje.coreSpriteRightPaginationArrow'
+        click_by_css_selector(self, next_feed_selector)
