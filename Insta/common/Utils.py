@@ -14,6 +14,12 @@ ID = config.USER_ID  # 인스타그램 ID realcoders
 PW = config.USER_PW  # 인스타그램 PW
 
 
+
+"""
+config 의 정보를 토대로 로그인을 시도한다. ↴ ↴
+"""
+
+
 def login(self):
     # 화면띄우기
     options = webdriver.ChromeOptions()
@@ -53,7 +59,11 @@ def login(self):
     time.sleep(random_wait_time())
 
 
-# 랜덤 대기시간
+"""
+대기시간 (랜덤) 실행 ↴ ↴
+"""
+
+
 def random_wait_time():
     random_wait_min = 3  # 최소 대기시간
     random_wait_max = 8  # 최대 대기시간
@@ -63,7 +73,11 @@ def random_wait_time():
     return wait_sec
 
 
-# xpath를 받아서 클릭한다.
+"""
+xpath 를 받아서 클릭한다. ↴ ↴
+"""
+
+
 def click_by_xpath(self, xpath):
     try:
         time.sleep(3)
@@ -75,6 +89,11 @@ def click_by_xpath(self, xpath):
         print("no article in ", xpath)
     finally:
         time.sleep(random_wait_time())
+
+
+"""
+css selector 를 이용해 click! ↴ ↴
+"""
 
 
 def click_by_css_selector(self, selector):
@@ -89,8 +108,12 @@ def click_by_css_selector(self, selector):
         pass
 
 
-# element를 클릭한다.
-# 클릭 후 로딩을 위해 대기시간을 갖는다.
+""" 
+element 를 클릭한다.
+클릭 후 로딩을 위해 대기시간을 갖는다. ↴ ↴
+"""
+
+
 def click_element(element):
     try:
         element.click()
@@ -98,3 +121,24 @@ def click_element(element):
         element.send_keys(Keys.ENTER)
     finally:
         time.sleep(random_wait_time())
+
+
+def has_caution_words(self, desc):
+    is_not_a_person = False
+    try:
+        caution_words = ['오픈톡', '부업문의', '소액투자', '수익금', '재태크', '재택근무']
+
+        print(desc)
+
+
+        for word in caution_words:
+            if word in desc:
+                filter_result = word, " 문자열 감지했음 "
+                print(filter_result)
+                return filter_result
+
+    except:
+        print('error')
+
+    return
+
