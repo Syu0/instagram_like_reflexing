@@ -26,43 +26,96 @@ PW = config.USER_PW  # 인스타그램 PW
 
 BASE_USER = ['cafe_uncommon']
 
+"""
+BASE_USER를 기준으로 팔로워 / 팔로우 유저들을 방문한다.
+기존의 '좋아요'버튼을 해제 하지 않고, 누를 수 있다.
+
+"""
+
 
 class ScrapingFollowers:
-    baseUserName = ''
-    targetUsersList = []
+    targetFollowerList = [] # 팔로워
+    targetFollowingList = []    # 팔로우(팔로잉)
 
     def __init__(self, target_user=BASE_USER[0]):
         for target_user in BASE_USER:
-            self.baseUserName = target_user
-            print(target_user, "계정의 팔로워들을 방문합니다.")
+            # self.baseUserName = target_user
+            print(target_user, "계정의 팔로워/팔로잉 들을 수집합니다.")
             login(self)
-            self.targetUsersList = self.get_target_users(self.baseUserName)
 
-            self.apeal_progress()
+            self.get_followers(target_user)
+            self.get_followings(target_user)
+
+            # if self.targetFollowerList:
+            #     self.apeal_progress(self.targetFollowerList)
+            #
+            # if self.targetFollowingList:
+            #     self.apeal_progress(self.targetFollowingList)
 
             self.browser.quit()
 
-    def go_to_profile_page(self, userName):
-        time.sleep(3)
-        pageUrl = "https://instagram.com/" + userName + "/"
-        self.browser.get(pageUrl)
+    """
+    baseUserName 의 프로필에서 팔로워의 리스트를 수집한다. ↴ ↴
+    """
 
-    def get_target_users(self, baseUserName):
+    def get_followers(self, baseUserName):
         self.go_to_profile_page(baseUserName)
         time.sleep(10)
-        targetUsersList = []
 
         try:
 
-            # 1. '팔로워' 리스트 저장
+            # 1. '팔로' 리스트 저장
             # click followers list
             follower_button = self.browser.find_elements_by_class_name('Y8-fY')
-            alinks = follower_button[2].find_elements(By.CLASS_NAME, '-nal3')
+            alinks = follower_button[1].find_elements(By.CLASS_NAME, '-nal3')
             total_follower_txt = alinks[0].text
             print(total_follower_txt)
             for link in alinks:
                 link.send_keys(Keys.RETURN)
-            print('총 팔로우 : ', total_follower_txt, '명')
+
+            time.sleep(10)
+
+            followers = 0
+            follower_element = self.browser.find_elements_by_class_name('jSC57')
+            for follower_ul in follower_element:
+                followers = follower_ul.find_elements(By.XPATH, './/div/li')
+
+        except ElementNotInteractableException:
+            print("비공개 계정", baseUserName)
+
+        # 리스트에 저장
+        for user in followers:
+            try:
+                follow_button = user.find_element(By.XPATH, './/div/div/button')
+                # 기존 팔로잉 유저는 거른다.
+                if follow_button.text == '팔로우':
+                    user_name = user.find_element(By.XPATH, './/div/div/div/div/div/span/a')
+                    if user_name.text not in self.targetFollowerList:
+                        self.targetFollowerList.append(user_name.text)
+
+            except NoSuchElementException:
+                pass
+
+        print('수집결과 ', len(self.targetFollowerList))
+        print(self.targetFollowerList)
+
+    """
+    프로필에서 '팔로우(팔로잉)' 리스트 저장↴ ↴
+    """
+
+    def get_followings(self, baseUserName):
+        self.go_to_profile_page(baseUserName)
+        time.sleep(10)
+
+        try:
+
+            # 1. '팔로우' 리스트 저장
+            # click followers list
+            follower_button = self.browser.find_elements_by_class_name('Y8-fY')
+            alinks = follower_button[2].find_elements(By.CLASS_NAME, '-nal3')
+            total_follower_txt = alinks[0].text
+            for link in alinks:
+                link.send_keys(Keys.RETURN)
 
             time.sleep(10)
 
@@ -81,68 +134,31 @@ class ScrapingFollowers:
                 # 기존 팔로잉 유저는 거른다.
                 if follow_button.text == '팔로우':
                     user_name = user.find_element(By.XPATH, './/div/div[2]/div[1]/div/div/span/a')
-                    if user_name.text not in targetUsersList:
-                        targetUsersList.append(user_name.text)
+                    if user_name.text not in self.targetFollowingList:
+                        self.targetFollowingList.append(user_name.text)
 
             except NoSuchElementException:
                 pass
 
-        # TODO : 2. '팔로우' 리스트 저장
+        print('수집결과 ', len(self.targetFollowingList))
+        print(self.targetFollowingList)
 
-        # click followers list
-        # 팔로워 창 닫기 클릭
-        # close_buttons = self.browser.find_elements_by_class_name('wpO6b')
-        # close_buttons[1].click()
-        #
-        # alinks = self.browser.find_elements_by_class_name('-nal3')
-        # total_follow_txt = alinks[2].text
-        # print (total_follow_txt)
-        # alinks[2].send_keys(Keys.RETURN)
-        #
-        # print('총 팔로우 : ', total_follow_txt, '명')
-        #
-        # time.sleep(10)
-        #
-        # followers = 0
-        # follower_element = self.browser.find_elements_by_class_name('jSC57')
-        # for follower_ul in follower_element:
-        #     followers = follower_ul.find_elements(By.XPATH, './/div/li')
-        #
-        # time.sleep(10)
-        # # 리스트에 저장
-        # for user in followers:
-        #     follow_button = user.find_element(By.XPATH, './/div/div/button')
-        #     # 기존 팔로잉 유저는 거른다.
-        #     if follow_button.text == '팔로우':
-        #         user_name = user.find_element(By.XPATH, './/div/div/div/div/div/span/a')
-        #         if user_name.text not in targetUsersList:
-        #             targetUsersList.append(user_name.text)
+    """
+    최근 게시물에서 '좋아요' 클릭
+    ㄴ 프로필 필터링 기능 추가됨
+    """
 
-        # 스크롤하기
-        # get users
-        # time.sleep(3)
-        # user_names_xpath = '//a[@class="FPmhX notranslate MBL3Z"]'
-        # user_name_tags = self.browser.find_element_by_xpath(user_names_xpath)
-        # lpos = len(user_name_tags)
-        # touchAction = TouchActions(self.browser)
-        # touchAction.scroll_from_element(user_name_tags[lpos], 20)
-
-        # return list
-
-        print('수집결과 ', len(targetUsersList))
-        print(targetUsersList)
-        return targetUsersList
-
-    def apeal_progress(self):
+    def apeal_progress(self, targetUsersList):
         # 리스트에서 한개씩 꺼낸다.
-        for userName in self.targetUsersList:
+        for userName in targetUsersList:
             # 좋아요 누르기
             self.go_to_profile_page(userName)
-            # TODO: 프로필에 '오픈톡','부업문의, 소액투자, 수익금, 재태크, 재택근무' 등의 단어를 포함한다면 제외하도록 추가.
+
             random_wait_time()
 
             profil_area = self.browser.find_element_by_class_name('-vDIg')
 
+            # 필터링 대상이 아니라면 최근 게시물을 클릭한다.
             try:
                 if not has_caution_words(self, profil_area.text):
                     self.click_like_recent()
@@ -152,11 +168,6 @@ class ScrapingFollowers:
             pass
 
             random_wait_time()
-
-            # 팔로잉 누르기
-            # self.click_following_button()
-            # 메시지 남기기 BASIC_MESSAGE ( baseUserName+"님 보고 왔어요. 먼저 선팔하고 갑니다 ^^ " + BASIC_MESSAGE)
-            # self.click_message_button()
 
     def click_like_recent(self):
         # 최근 게시물 선택해서 '좋아요' 클릭
@@ -174,3 +185,8 @@ class ScrapingFollowers:
             # 다음 피드로 이동하기
             next_feed_selector = 'body > div._2dDPU.CkGkG > div.EfHg9 > div > div > a._65Bje.coreSpriteRightPaginationArrow'
             click_by_css_selector(self, next_feed_selector)
+
+    def go_to_profile_page(self, userName):
+        time.sleep(3)
+        pageUrl = "https://instagram.com/" + userName + "/"
+        self.browser.get(pageUrl)
