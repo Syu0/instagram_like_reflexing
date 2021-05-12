@@ -6,7 +6,11 @@ from selenium.webdriver.common.by import By
 
 from Insta.common.Utils import random_wait_time, login, click_by_xpath, click_element, click_by_css_selector
 
+"""
+최근 활동 내역을 기준으로 프로필을 방문한다.
+기존의 '좋아요'버튼을 해제 하지 않고, 누를 수 있다.
 
+"""
 class LikeReflexing:
     newFollower = "신규 팔로워 : "
     newComments = "최근 댓글 : "
@@ -114,6 +118,7 @@ class LikeReflexing:
                 isSecretAccount = True
 
             if not isSecretAccount:
+                ## TODO: has_caution_words()  필터링 추가
                 # 좋아요 안눌렸으면 클릭
                 for i in range(1, 20):
 
@@ -124,7 +129,6 @@ class LikeReflexing:
                         span_button = self.browser.find_element_by_class_name('fr66n')
                         span_ele = span_button.find_element(By.XPATH, './/button/div/span')
                         svg = span_ele.find_element(By.XPATH, './/*[name()="svg"]')
-                        # span_button.find_element_by_xpath('//div[@class="_8-yf5 "]/*[name()="svg"][@aria-label="좋아"]')
                         print(svg.get_attribute('aria-label'))
                         if svg.get_attribute('aria-label') == '좋아요':
                             # Heart button click
@@ -135,6 +139,7 @@ class LikeReflexing:
                                     click_element(heart_button)
                                 finally:
                                     new_activity[userName]['count'] -= 1
+                                    print("좋아요 클릭")
                         else:
                             print('이미 눌렀음')
                     except NoSuchElementException:

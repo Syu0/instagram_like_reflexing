@@ -24,18 +24,18 @@ from Insta.common.Utils import click_by_xpath, random_wait_time, click_by_css_se
 ID = config.USER_ID  # 인스타그램 ID realcoders
 PW = config.USER_PW  # 인스타그램 PW
 
-BASE_USER = ['cafe_uncommon']
+BASE_USER = ['inhee_1207', 'lemomente', 'cafe_uncommon']
 
 """
 BASE_USER를 기준으로 팔로워 / 팔로우 유저들을 방문한다.
-기존의 '좋아요'버튼을 해제 하지 않고, 누를 수 있다.
-
+ㄴ기존의 '좋아요'버튼을 해제 하지 않고, 누를 수 있다.
+ㄴ프로필에 필터링 적용.(부업계정 , 비공계 계정 제외)
 """
 
 
 class ScrapingFollowers:
-    targetFollowerList = [] # 팔로워
-    targetFollowingList = []    # 팔로우(팔로잉)
+    targetFollowerList = []  # 팔로워
+    targetFollowingList = []  # 팔로우(팔로잉)
 
     def __init__(self, target_user=BASE_USER[0]):
         for target_user in BASE_USER:
@@ -46,11 +46,11 @@ class ScrapingFollowers:
             self.get_followers(target_user)
             self.get_followings(target_user)
 
-            # if self.targetFollowerList:
-            #     self.apeal_progress(self.targetFollowerList)
-            #
-            # if self.targetFollowingList:
-            #     self.apeal_progress(self.targetFollowingList)
+            if self.targetFollowerList:
+                self.apeal_progress(self.targetFollowerList)
+
+            if self.targetFollowingList:
+                self.apeal_progress(self.targetFollowingList)
 
             self.browser.quit()
 
@@ -151,16 +151,25 @@ class ScrapingFollowers:
     def apeal_progress(self, targetUsersList):
         # 리스트에서 한개씩 꺼낸다.
         for userName in targetUsersList:
-            # 좋아요 누르기
+            isSecretAccount = False
+            # 프로필 페이지로 이동한다.
             self.go_to_profile_page(userName)
 
             random_wait_time()
+            try:
+                click_by_xpath(self, '//article/div/div/div[1]/div[1]/a')
+            except NoSuchElementException:
+                print("첫번째 피드 클릭 실패 : 비공개 계정인지 확인 ", userName)
+                isSecretAccount = True
+
+            if isSecretAccount:
+                break
 
             profil_area = self.browser.find_element_by_class_name('-vDIg')
 
             # 필터링 대상이 아니라면 최근 게시물을 클릭한다.
             try:
-                if not has_caution_words(self, profil_area.text):
+                if not has_caution_words(self, profil_area.text, userName):
                     self.click_like_recent()
 
             except NoSuchElementException:
@@ -172,19 +181,45 @@ class ScrapingFollowers:
     def click_like_recent(self):
         # 최근 게시물 선택해서 '좋아요' 클릭
         time.sleep(3)
-        selected_ele = self.browser.find_element_by_xpath('//article/div/div/div[1]/div[1]/a')
-        click_element(selected_ele)
+        # selected_ele = self.browser.find_element_by_xpath('//article/div/div/div[1]/div[1]/a')
+        # click_element(selected_ele)
         # self.nextFeed()
 
         for a in range(5):
-            # 좋아요 누르기
-            time.sleep(3)
-            like_list = self.browser.find_elements_by_xpath('//article//section/span/button')
-            click_element(like_list[0])
+            try:
+                # Check label '좋아요'
+                ## svg 의 attribute 에 접근하려면 꼭 class_name 으로 검색된 elemente를 사용해야 한다.
+                span_button = self.browser.find_element_by_class_name('fr66n')
+                span_ele = span_button.find_element(By.XPATH, './/button/div/span')
+                svg = span_ele.find_element(By.XPATH, './/*[name()="svg"]')
+                if svg.get_attribute('aria-label') == '좋아요':
+                    # Heart button click
+                    heart_button = self.browser.find_element_by_xpath(
+                        '//span[@class="fr66n"]/button[@class="wpO6b  "]')
+                    if heart_button:
+                        try:
+                            click_element(heart_button)
+                        finally:
+                            pass
+                else:
+                    print('이미 눌렀음')
+            except NoSuchElementException:
+                print("No Element!")
+                pass
+            finally:
+                # 다음피드로 이동
+                self.nextFeed()
 
-            # 다음 피드로 이동하기
-            next_feed_selector = 'body > div._2dDPU.CkGkG > div.EfHg9 > div > div > a._65Bje.coreSpriteRightPaginationArrow'
-            click_by_css_selector(self, next_feed_selector)
+            # 좋아요 누르기
+            # time.sleep(3)
+            # like_list = self.browser.find_elements_by_xpath('//article//section/span/button')
+            # click_element(like_list[0])
+            #
+            # self.nextFeed()
+
+    def nextFeed(self):
+        next_feed_selector = 'body > div._2dDPU.CkGkG > div.EfHg9 > div > div > a._65Bje.coreSpriteRightPaginationArrow'
+        click_by_css_selector(self, next_feed_selector)
 
     def go_to_profile_page(self, userName):
         time.sleep(3)

@@ -13,8 +13,6 @@ import config
 ID = config.USER_ID  # 인스타그램 ID realcoders
 PW = config.USER_PW  # 인스타그램 PW
 
-
-
 """
 config 의 정보를 토대로 로그인을 시도한다. ↴ ↴
 """
@@ -123,17 +121,14 @@ def click_element(element):
         time.sleep(random_wait_time())
 
 
-def has_caution_words(self, desc):
+def has_caution_words(self, desc, userName):
     is_not_a_person = False
     try:
         caution_words = ['오픈톡', '부업문의', '소액투자', '수익금', '재태크', '재택근무']
 
-        print(desc)
-
-
         for word in caution_words:
             if word in desc:
-                filter_result = word, " 문자열 감지했음 "
+                filter_result = word, " 문자열 감지했음 ", userName
                 print(filter_result)
                 return filter_result
 
@@ -141,4 +136,3 @@ def has_caution_words(self, desc):
         print('error')
 
     return
-
